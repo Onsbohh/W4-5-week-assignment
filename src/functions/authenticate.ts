@@ -22,7 +22,9 @@ export default async (req: Request): Promise<MyContext> => {
       //     },
       //   },
       // );
+      console.log(token);
       if (!userFromToken) {
+        console.log("NOT VERIFIED");
         return {};
       }
       // add token to user object so we can use it in resolvers
@@ -39,3 +41,4 @@ export default async (req: Request): Promise<MyContext> => {
   }
   return {};
 };
+
