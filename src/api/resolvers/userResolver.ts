@@ -3,6 +3,7 @@ import {Cat, LoginUser, TokenContent, UserInput, UserOutput} from '../../types/D
 import fetchData from '../../functions/fetchData';
 import {LoginResponse, UserResponse} from '../../types/MessageTypes';
 import { MyContext } from '../../types/MyContext';
+import {isAdmin, isLoggedIn} from '../../functions/authorize';
 
 // TODO: create resolvers based on user.graphql
 // note: when updating or deleting a user don't send id to the auth server, it will get it from the token. So token needs to be sent with the request to the auth server
@@ -58,9 +59,7 @@ export default {
             );
         },
         updateUser: async (_parent: undefined, args: {user: LoginUser}, context: MyContext) => {
-            if (!context.userdata || !context.userdata.user) {
-                throw new GraphQLError("No logged in user!");
-            }
+            isLoggedIn(context);
 
             return await fetchData<UserResponse> (
                 `${process.env.AUTH_URL}/users/${context.userdata?.user.id}`,
@@ -75,9 +74,7 @@ export default {
             );
         },
         deleteUser: async (_parent: undefined, _args: undefined, context: MyContext) => {
-            if (!context.userdata || !context.userdata.user) {
-                throw new GraphQLError("No logged in user!");
-            }
+            isLoggedIn(context);
 
             return await fetchData<UserResponse> (
                 `${process.env.AUTH_URL}/users/${context.userdata?.user.id}`,
@@ -90,13 +87,7 @@ export default {
             );
         },
         updateUserAsAdmin: async (_parent: undefined, args: {id: string, user: UserOutput}, context: MyContext ) => {
-            if (!context.userdata || !context.userdata.user) {
-                throw new GraphQLError('Not logged in');
-            }
-
-            if (context.userdata.user.role !== 'admin') {
-                throw new GraphQLError("Unauthorized!");
-            }
+            isAdmin(context);
 
             return await fetchData<UserResponse> (
                 `${process.env.AUTH_URL}/users/${context.userdata?.user.id}`,
@@ -110,20 +101,13 @@ export default {
             );
         },
         deleteUserAsAdmin: async (_parent: undefined, args: {id: string, user: UserOutput}, context: MyContext ) => {
-            if (!context.userdata || !context.userdata.user) {
-                throw new GraphQLError('Not logged in');
-            }
-
-            if (context.userdata.user.role !== 'admin') {
-                throw new GraphQLError("Unauthorized!");
-            }
-
+            isAdmin(context);
             return await fetchData<UserResponse> (
                 `${process.env.AUTH_URL}/users/${args.id}`,
                 {
                     method: 'DELETE',
                     headers: {
-                        Authorization: `Bearer ${context.userdata.token}`
+                        Authorization: `Bearer ${context.userdata?.token}`
                     }
                 }
             );

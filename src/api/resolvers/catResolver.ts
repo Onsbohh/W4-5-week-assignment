@@ -1,8 +1,8 @@
 import {GraphQLError} from 'graphql';
 import catModel from '../models/catModel';
 import {Cat, LocationInput, TokenContent} from '../../types/DBTypes';
-import {Query, Types} from 'mongoose';
 import { MyContext } from '../../types/MyContext';
+import {isLoggedIn} from '../../functions/authorize';
 
 
 // TODO: create resolvers based on cat.graphql
@@ -27,16 +27,12 @@ export default {
     },
     Mutation: { 
         createCat: async (_parent: undefined,  args: {input: Omit<Cat, 'id'>}, context: MyContext) => {
-            if (!context) {
-                throw new GraphQLError('Unauthorized create cat');
-            }
+            isLoggedIn(context);
             args.input.owner = context.userdata?.user.id;
             return await catModel.create(args.input);
         },
         updateCat: async (_parent: undefined, args: {id: string; input: Omit<Cat, 'id'>}, context: MyContext) => {
-            if (!context) {
-                throw new GraphQLError('Unauthorized cat update');
-            }
+            isLoggedIn(context);
 
             const cat = await catModel.findById(args.id);
             if (!cat) {
@@ -53,9 +49,7 @@ export default {
             return await catModel.findByIdAndUpdate({_id: args.id, owner: context.userdata?.user.id}, args.input, {new: true});
         },
         deleteCat: async (_parent: undefined, args: {id: string}, context: MyContext) => {
-            if (!context) {
-                throw new GraphQLError('Unauthorized cat delete');
-            }
+            isLoggedIn(context);
 
             const cat = await catModel.findById(args.id);
             if (!cat) {
